@@ -1,0 +1,39 @@
+{
+  "cashAvailable": 10000.0,
+  "maxAverageRisk": 0.1,
+  "maxSectorAllocation": 0.4,
+  "investmentList": [
+    {
+      "asset": {
+        "id": "AAPL",
+        "name": "Apple Inc.",
+        "sector": "Technology",
+        "expectedReturn": 0.07,
+        "risk": 0.12
+      },
+      "allocated": true
+    },
+    {
+      "asset": {
+        "id": "MSFT",
+        "name": "Microsoft Corp.",
+        "sector": "Technology",
+        "expectedReturn": 0.06,
+        "risk": 0.1
+      },
+      "allocated": false
+    },
+    {
+      "asset": {
+        "id": "JNJ",
+        "name": "Johnson & Johnson",
+        "sector": "Healthcare",
+        "expectedReturn": 0.05,
+        "risk": 0.08
+      },
+      "allocated": true
+    }
+  ],
+  "score": "0hard/0soft",
+  "allocationRange": [true, false]
+}

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Optimizer</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+  body { padding: 2rem; background-color: #f8f9fa; }
+  textarea, pre { font-family: monospace; }
+  .box { height: 400px; overflow: auto; padding: 1rem; border-radius: 0.5rem; background: #e9ecef; }
+  .diff-added { background-color: #d4edda; } /* green for additions */
+  .diff-removed { background-color: #f8d7da; } /* red for removed/changed */
+</style>
+</head>
+<body>
+<div class="container">
+  <h1 class="mb-4">Portfolio Optimizer</h1>
+
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <label for="requestJson" class="form-label">Request JSON</label>
+      <textarea id="requestJson" class="form-control" rows="20"></textarea>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Response JSON</label>
+      <pre class="box" id="responseBox"></pre>
+    </div>
+  </div>
+
+  <button id="solveBtn" class="btn btn-primary mb-3">Solve Portfolio</button>
+</div>
+
+<script>
+const defaultRequest = {
+  "cashAvailable": 10000.0,
+  "maxAverageRisk": 0.1,
+  "maxSectorAllocation": 0.4,
+  "investmentList": [
+    { "asset": {"id":"AAPL","name":"Apple Inc.","sector":"Technology","expectedReturn":0.07,"risk":0.12}, "allocated": true },
+    { "asset": {"id":"MSFT","name":"Microsoft Corp.","sector":"Technology","expectedReturn":0.06,"risk":0.1}, "allocated": false },
+    { "asset": {"id":"JNJ","name":"Johnson & Johnson","sector":"Healthcare","expectedReturn":0.05,"risk":0.08}, "allocated": true }
+  ],
+  "score": "0hard/0soft",
+  "allocationRange": [true, false]
+};
+document.getElementById('requestJson').value = JSON.stringify(defaultRequest, null, 2);
+
+function highlightDifferences(request, response) {
+  // Basic diff: if key exists in both and same -> normal
+  // If value changed -> red
+  // If new key in response -> green
+  function diffObj(req, res) {
+    if (typeof res !== 'object' || res === null) return JSON.stringify(res, null, 2);
+    let result = '{\n';
+    for (const key of Object.keys(res)) {
+      const rVal = res[key];
+      const reqVal = req ? req[key] : undefined;
+      if (JSON.stringify(rVal) === JSON.stringify(reqVal)) {
+        result += `  "${key}": ${JSON.stringify(rVal)},\n`;
+      } else if (reqVal === undefined) {
+        result += `  "${key}": <span class="diff-added">${JSON.stringify(rVal)}</span>,\n`;
+      } else {
+        result += `  "${key}": <span class="diff-removed">${JSON.stringify(rVal)}</span>,\n`;
+      }
+    }
+    result += '}';
+    return result;
+  }
+  return diffObj(request, response);
+}
+
+document.getElementById('solveBtn').addEventListener('click', async () => {
+  const responseBox = document.getElementById('responseBox');
+  responseBox.innerHTML = 'Solving...';
+
+  let payload;
+  try {
+    payload = JSON.parse(document.getElementById('requestJson').value);
+  } catch (e) {
+    responseBox.textContent = 'Invalid JSON: ' + e.message;
+    return;
+  }
+
+  try {
+    const res = await fetch('http://localhost:2025/api/portfolio/solve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      responseBox.textContent = 'Error: ' + res.status + '\n' + text;
+      return;
+    }
+
+    const responseJson = await res.json();
+    responseBox.innerHTML = highlightDifferences(payload, responseJson);
+  } catch (err) {
+    responseBox.textContent = 'Fetch error: ' + err.message;
+  }
+});
+</script>
+</body>
+</html>
+
